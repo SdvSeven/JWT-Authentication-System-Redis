@@ -1,0 +1,87 @@
+services:
+  # ==================== API ====================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: jwt-auth-api
+    ports:
+      - "8000:8000"
+    environment:
+      # Приложение
+      - APP_NAME=JWT Auth System
+      - DEBUG=false
+      
+      # JWT (в продакшене использовать секреты!)
+      - JWT_SECRET_KEY=change-this-in-production-use-strong-secret
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=15
+      - REFRESH_TOKEN_EXPIRE_DAYS=7
+      
+      # Redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      
+      # Безопасность
+      - MAX_LOGIN_ATTEMPTS=5
+      - LOGIN_LOCKOUT_MINUTES=15
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - jwt-network
+
+  # ==================== Redis ====================
+  redis:
+    image: redis:7-alpine
+    container_name: jwt-auth-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - jwt-network
+
+  # ==================== Redis Commander (опционально) ====================
+  # Веб-интерфейс для просмотра Redis
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: jwt-auth-redis-ui
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    profiles:
+      - debug
+    networks:
+      - jwt-network
+
+networks:
+  jwt-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local
