@@ -1,4 +1,11 @@
+
 # JWT Authentication System с Redis
+
+<p align="center">
+  <img src="media/media1.png" alt="Company Image" width="200"/>
+</p>
+
+<h3 align="center">Задание для компании ООО ПСЭК</h3>
 
 ## О проекте
 
