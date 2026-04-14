@@ -169,3 +169,4 @@ curl -X POST http://localhost:8000/auth/logout \
 - Docker
 - Passlib
 
+Co-authored-by: SdvSeven <ssdvseven@gmail.com>
